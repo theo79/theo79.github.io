@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>3D Print Cost Estimator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      font-size: 14px;
+    }
+
+    .wrapper {
+      display: flex;
+      max-width: 800px;
+      margin: auto;
+      gap: 20px;
+    }
+
+    .left, .right {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .left {
+      flex: 4;
+    }
+
+    .right {
+      flex: 3;
+      justify-content: flex-start;
+    }
+
+    label {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    input, select {
+      padding: 6px;
+      margin: 5px 0;
+      width: 100%;
+      font-size: 13px;
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 10px;
+      background: blue;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    h3 {
+      margin-top: 20px;
+      font-size: 16px;
+    }
+
+    .suggestions {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .tooltip-icon {
+      cursor: help;
+      color: #007BFF;
+      margin-left: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h2 style="text-align:center;">3D Print Cost Estimator</h2>
+  <div class="wrapper">
+    <div class="left">
+      <label>Filament Cost (per kg) <span class="currency-label">[€]</span>:</label>
+      <input type="number" id="filamentCost" placeholder="">
+
+      <label>Filament Used (grams):</label>
+      <input type="number" id="filamentUsed" placeholder="">
+
+      <label>Electricity Cost (per kWh) <span class="currency-label">[€]</span>:</label>
+      <input type="number" id="electricityCost" placeholder="">
+
+      <label>Print Time (hours):</label>
+      <input type="number" id="printTime" placeholder="">
+
+      <label>
+        Labor Cost (per hour) <span class="currency-label">[€]</span>:
+        <span class="tooltip-icon" title="Optional. Estimate your hourly rate or opportunity cost. E.g., 8–15€/hr.">&#9432;</span>
+      </label>
+      <input type="number" id="laborCost" placeholder="">
+
+      <label>
+        Machine Wear Cost (fixed) <span class="currency-label">[€]</span>:
+        <span class="tooltip-icon" title="Optional. Typical range: 1–3€ depending on wear and maintenance.">&#9432;</span>
+      </label>
+      <input type="number" id="machineWear" placeholder="">
+    </div>
+
+    <div class="right">
+      <label>Currency:</label>
+      <select id="currencySelect" onchange="updateCurrency()">
+        <option value="€" selected>Euro (€)</option>
+        <option value="$">US Dollar ($)</option>
+      </select>
+
+      <label>Profit Margin (%):</label>
+      <input type="number" id="profitMargin" value="20">
+
+      <button onclick="calculateCost()">Calculate</button>
+      <h3>Total Cost: <span id="currencySymbol">€</span><span id="totalCost">0.00</span></h3>
+    </div>
+  </div>
+
+  <div class="suggestions">
+    Suggestions: <a href="mailto:theocharis.anastopoulos@gmail.com">theocharis.anastopoulos@gmail.com</a>
+  </div>
+
+  <script>
+    function updateCurrency() {
+      const currency = document.getElementById('currencySelect').value;
+      document.getElementById('currencySymbol').innerText = currency;
+
+      const labels = document.querySelectorAll('.currency-label');
+      labels.forEach(label => {
+        label.innerText = `[${currency}]`;
+      });
+
+      calculateCost();
+    }
+
+    function calculateCost() {
+      const currency = document.getElementById('currencySelect').value;
+
+      let filamentCost = parseFloat(document.getElementById('filamentCost').value) || 0;
+      let filamentUsed = parseFloat(document.getElementById('filamentUsed').value) || 0;
+      let electricityCost = parseFloat(document.getElementById('electricityCost').value) || 0;
+      let printTime = parseFloat(document.getElementById('printTime').value) || 0;
+      let laborCost = parseFloat(document.getElementById('laborCost').value) || 0;
+      let machineWear = parseFloat(document.getElementById('machineWear').value) || 0;
+      let profitMargin = parseFloat(document.getElementById('profitMargin').value) || 0;
+
+      let filamentExpense = (filamentCost / 1000) * filamentUsed;
+      let electricityExpense = electricityCost * printTime * 0.5;
+      let laborExpense = laborCost * printTime;
+
+      let total = filamentExpense + electricityExpense + laborExpense + machineWear;
+      total += total * (profitMargin / 100);
+
+      document.getElementById('totalCost').innerText = total.toFixed(2);
+      document.getElementById('currencySymbol').innerText = currency;
+    }
+
+    window.onload = calculateCost;
+  </script>
+</body>
+</html>
+
+
+
+
+
