@@ -71,10 +71,46 @@
       color: #007BFF;
       margin-left: 4px;
     }
+
+    .tips-section {
+      max-width: 800px;
+      margin: 30px auto 10px auto;
+      font-size: 13px;
+      color: #444;
+      display: none;
+    }
+
+    .tips-section h4 {
+      margin-bottom: 10px;
+      font-size: 15px;
+      color: #222;
+    }
+
+    .tips-section ul {
+      padding-left: 18px;
+    }
+
+    .tips-section li {
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+
+    #downloadBtn {
+      display: none;
+      margin: 20px auto 0;
+      max-width: 800px;
+      background-color: green;
+    }
   </style>
 </head>
 <body>
   <h2 style="text-align:center;">3D Print Cost Estimator</h2>
+
+  <div style="max-width:800px; margin:auto;">
+    <label>Project Name (optional):</label>
+    <input type="text" id="projectName" placeholder="e.g., Phone Stand Prototype" />
+  </div>
+
   <div class="wrapper">
     <div class="left">
       <label>Filament Cost (per kg) <span class="currency-label">[€]</span>:</label>
@@ -117,10 +153,20 @@
     </div>
   </div>
 
+  <div class="tips-section">
+    <h4>Helpful Tips</h4>
+    <ul id="tipsList"></ul>
+  </div>
+
+  <div style="text-align:center;">
+    <button id="downloadBtn" onclick="downloadPDF()">Download as PDF</button>
+  </div>
+
   <div class="suggestions">
     Suggestions: <a href="mailto:theocharis.anastopoulos@gmail.com">theocharis.anastopoulos@gmail.com</a>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
     function updateCurrency() {
       const currency = document.getElementById('currencySelect').value;
@@ -154,21 +200,113 @@
 
       document.getElementById('totalCost').innerText = total.toFixed(2);
       document.getElementById('currencySymbol').innerText = currency;
+
+      updateTips(filamentCost, profitMargin, laborCost);
+
+      // Show tips and download button
+      document.querySelector('.tips-section').style.display = 'block';
+      document.getElementById('downloadBtn').style.display = 'inline-block';
+    }
+
+    function updateTips(filamentCost, profitMargin, laborCost) {
+      const tips = [];
+
+      if (filamentCost > 25) {
+        tips.push("You're using premium material — consider showing this to clients for justification.");
+      } else if (filamentCost < 15) {
+        tips.push("That’s quite a low filament price — double-check if it’s per kg.");
+      }
+
+      if (profitMargin > 80) {
+        tips.push("High profit margins may deter buyers. 20–50% is more common for small prints.");
+      } else if (profitMargin < 5) {
+        tips.push("Low margins can eat into your actual costs. Be sure to cover all expenses.");
+      }
+
+      if (laborCost > 20) {
+        tips.push("If you're charging high labor, consider breaking it down into design/setup/maintenance time.");
+      }
+
+      if (tips.length === 0) {
+        tips.push("PLA is often the cheapest material (~20€/kg), while PETG and ABS may cost slightly more.");
+        tips.push("Profit Margin is a percentage added to cover risks and make income. A typical range is 10–50%.");
+        tips.push("Labor Cost can reflect your time, hourly rate, or even freelance value.");
+      }
+
+      const tipsList = document.getElementById("tipsList");
+      tipsList.innerHTML = "";
+      tips.forEach((tip) => {
+        const li = document.createElement("li");
+        li.textContent = tip;
+        tipsList.appendChild(li);
+      });
+    }
+
+    async function downloadPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      const currency = document.getElementById('currencySelect').value;
+      const totalCost = document.getElementById('totalCost').innerText;
+      const projectName = document.getElementById('projectName').value || "Untitled Project";
+
+      const filamentCost = document.getElementById('filamentCost').value;
+      const filamentUsed = document.getElementById('filamentUsed').value;
+      const electricityCost = document.getElementById('electricityCost').value;
+      const printTime = document.getElementById('printTime').value;
+      const laborCost = document.getElementById('laborCost').value;
+      const machineWear = document.getElementById('machineWear').value;
+      const profitMargin = document.getElementById('profitMargin').value;
+
+      const timestamp = new Date().toLocaleString();
+
+      let y = 10;
+      doc.setFontSize(14);
+      doc.text("3D Print Cost Estimate", 10, y); y += 8;
+      doc.setFontSize(11);
+      doc.text(`Project: ${projectName}`, 10, y); y += 6;
+      doc.text(`Generated on: ${timestamp}`, 10, y); y += 8;
+
+      doc.text(`Filament Cost: ${filamentCost} ${currency}/kg`, 10, y); y += 6;
+      doc.text(`Filament Used: ${filamentUsed} g`, 10, y); y += 6;
+      doc.text(`Electricity Cost: ${electricityCost} ${currency}/kWh`, 10, y); y += 6;
+      doc.text(`Print Time: ${printTime} hrs`, 10, y); y += 6;
+      doc.text(`Labor Cost: ${laborCost} ${currency}/hr`, 10, y); y += 6;
+      doc.text(`Machine Wear: ${machineWear} ${currency}`, 10, y); y += 6;
+      doc.text(`Profit Margin: ${profitMargin}%`, 10, y); y += 6;
+
+      y += 4;
+      doc.setFontSize(12);
+      doc.text(`Total Cost: ${currency}${totalCost}`, 10, y); y += 10;
+
+      const tips = document.querySelectorAll('#tipsList li');
+      doc.setFontSize(11);
+      doc.text("Helpful Tips:", 10, y); y += 6;
+      tips.forEach((tip) => {
+        const lines = doc.splitTextToSize("- " + tip.textContent, 180);
+        doc.text(lines, 10, y);
+        y += lines.length * 6;
+      });
+
+      doc.save(`${projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_cost.pdf`);
     }
 
     window.onload = calculateCost;
   </script>
+
   <script src='https://storage.ko-fi.com/cdn/scripts/overlay-widget.js'></script>
-<script>
-  kofiWidgetOverlay.draw('theo79', {
-    'type': 'floating-chat',
-    'floating-chat.donateButton.text': 'Tip Me',
-    'floating-chat.donateButton.background-color': '#00b9fe',
-    'floating-chat.donateButton.text-color': '#fff'
-  });
-</script>
+  <script>
+    kofiWidgetOverlay.draw('theo79', {
+      'type': 'floating-chat',
+      'floating-chat.donateButton.text': 'Tip Me',
+      'floating-chat.donateButton.background-color': '#00b9fe',
+      'floating-chat.donateButton.text-color': '#fff'
+    });
+  </script>
 </body>
 </html>
+
+
 
 
 
