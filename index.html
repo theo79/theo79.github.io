@@ -10,40 +10,33 @@
       margin: 20px;
       font-size: 14px;
     }
-
     .wrapper {
       display: flex;
       max-width: 800px;
       margin: auto;
       gap: 20px;
     }
-
     .left, .right {
       display: flex;
       flex-direction: column;
     }
-
     .left {
       flex: 4;
     }
-
     .right {
       flex: 3;
       justify-content: flex-start;
     }
-
     label {
       margin-top: 10px;
       font-weight: bold;
     }
-
     input, select {
       padding: 6px;
       margin: 5px 0;
       width: 100%;
       font-size: 13px;
     }
-
     button {
       margin-top: 15px;
       padding: 10px;
@@ -53,25 +46,21 @@
       cursor: pointer;
       font-size: 14px;
     }
-
     h3 {
       margin-top: 20px;
       font-size: 16px;
     }
-
     .suggestions {
       text-align: center;
       margin-top: 30px;
       font-size: 12px;
       color: #666;
     }
-
     .tooltip-icon {
       cursor: help;
       color: #007BFF;
       margin-left: 4px;
     }
-
     .tips-section {
       max-width: 800px;
       margin: 30px auto 10px auto;
@@ -79,22 +68,18 @@
       color: #444;
       display: none;
     }
-
     .tips-section h4 {
       margin-bottom: 10px;
       font-size: 15px;
       color: #222;
     }
-
     .tips-section ul {
       padding-left: 18px;
     }
-
     .tips-section li {
       margin-bottom: 8px;
       line-height: 1.4;
     }
-
     #downloadBtn {
       display: none;
       margin: 20px auto 0;
@@ -126,14 +111,26 @@
       <input type="number" id="printTime" placeholder="">
 
       <label>
+        Average Printer Power (W):
+        <span class="tooltip-icon" title="Average wattage while printing. If unsure, 90–150 W is common for small FDM printers.">&#9432;</span>
+      </label>
+      <input type="number" id="avgWatts" placeholder="e.g., 120">
+
+      <label>
+        Hands-on Labor (minutes):
+        <span class="tooltip-icon" title="Only the time you actually work: setup, filament change, cleanup.">&#9432;</span>
+      </label>
+      <input type="number" id="laborMinutes" placeholder="e.g., 20">
+
+      <label>
         Labor Cost (per hour) <span class="currency-label">[€]</span>:
-        <span class="tooltip-icon" title="Optional. Estimate your hourly rate or opportunity cost. E.g., 8–15€/hr.">&#9432;</span>
+        <span class="tooltip-icon" title="Estimate your hourly rate or opportunity cost. E.g., 8–15€/hr.">&#9432;</span>
       </label>
       <input type="number" id="laborCost" placeholder="">
 
       <label>
         Machine Wear Cost (fixed) <span class="currency-label">[€]</span>:
-        <span class="tooltip-icon" title="Optional. Typical range: 1–3€ depending on wear and maintenance.">&#9432;</span>
+        <span class="tooltip-icon" title="Typical range: 1–3€ depending on wear and maintenance.">&#9432;</span>
       </label>
       <input type="number" id="machineWear" placeholder="">
     </div>
@@ -171,68 +168,60 @@
     function updateCurrency() {
       const currency = document.getElementById('currencySelect').value;
       document.getElementById('currencySymbol').innerText = currency;
-
       const labels = document.querySelectorAll('.currency-label');
-      labels.forEach(label => {
-        label.innerText = `[${currency}]`;
-      });
-
+      labels.forEach(label => label.innerText = `[${currency}]`);
       calculateCost();
     }
 
     function calculateCost() {
       const currency = document.getElementById('currencySelect').value;
 
-      let filamentCost = parseFloat(document.getElementById('filamentCost').value) || 0;
-      let filamentUsed = parseFloat(document.getElementById('filamentUsed').value) || 0;
-      let electricityCost = parseFloat(document.getElementById('electricityCost').value) || 0;
-      let printTime = parseFloat(document.getElementById('printTime').value) || 0;
-      let laborCost = parseFloat(document.getElementById('laborCost').value) || 0;
-      let machineWear = parseFloat(document.getElementById('machineWear').value) || 0;
-      let profitMargin = parseFloat(document.getElementById('profitMargin').value) || 0;
+      const filamentCost = parseFloat(document.getElementById('filamentCost').value) || 0;
+      const filamentUsed = parseFloat(document.getElementById('filamentUsed').value) || 0;
+      const electricityCost = parseFloat(document.getElementById('electricityCost').value) || 0;
+      const printTime = parseFloat(document.getElementById('printTime').value) || 0;
+      const avgWatts = parseFloat(document.getElementById('avgWatts').value) || 0;
+      const laborRate = parseFloat(document.getElementById('laborCost').value) || 0;
+      const laborMinutes = parseFloat(document.getElementById('laborMinutes').value) || 0;
+      const machineWear = parseFloat(document.getElementById('machineWear').value) || 0;
+      const profitMargin = parseFloat(document.getElementById('profitMargin').value) || 0;
 
-      let filamentExpense = (filamentCost / 1000) * filamentUsed;
-      let electricityExpense = electricityCost * printTime * 0.5;
-      let laborExpense = laborCost * printTime;
+      const filamentExpense = (filamentCost / 1000) * filamentUsed;
+      const electricityExpense = (avgWatts > 0) ? (avgWatts / 1000) * printTime * electricityCost : 0;
+      const laborHours = laborMinutes / 60;
+      const laborExpense = laborRate * laborHours;
 
-      let total = filamentExpense + electricityExpense + laborExpense + machineWear;
-      total += total * (profitMargin / 100);
+      let subtotal = filamentExpense + electricityExpense + laborExpense + machineWear;
+      let total = subtotal + (subtotal * (profitMargin / 100));
 
       document.getElementById('totalCost').innerText = total.toFixed(2);
       document.getElementById('currencySymbol').innerText = currency;
 
-      updateTips(filamentCost, profitMargin, laborCost);
-
-      // Show tips and download button
+      updateTips(filamentCost, profitMargin, laborRate);
       document.querySelector('.tips-section').style.display = 'block';
       document.getElementById('downloadBtn').style.display = 'inline-block';
     }
 
     function updateTips(filamentCost, profitMargin, laborCost) {
       const tips = [];
-
       if (filamentCost > 25) {
-        tips.push("You're using premium material — consider showing this to clients for justification.");
+        tips.push("You're using premium material — consider showing this to clients.");
       } else if (filamentCost < 15) {
-        tips.push("That’s quite a low filament price — double-check if it’s per kg.");
+        tips.push("That’s a low filament price — check if it’s per kg.");
       }
-
       if (profitMargin > 80) {
-        tips.push("High profit margins may deter buyers. 20–50% is more common for small prints.");
+        tips.push("High profit margins may deter buyers. 20–50% is more common.");
       } else if (profitMargin < 5) {
-        tips.push("Low margins can eat into your actual costs. Be sure to cover all expenses.");
+        tips.push("Low margins can eat into your costs. Cover all expenses.");
       }
-
       if (laborCost > 20) {
-        tips.push("If you're charging high labor, consider breaking it down into design/setup/maintenance time.");
+        tips.push("High labor rate? Break it down into design/setup/maintenance time.");
       }
-
       if (tips.length === 0) {
-        tips.push("PLA is often the cheapest material (~20€/kg), while PETG and ABS may cost slightly more.");
-        tips.push("Profit Margin is a percentage added to cover risks and make income. A typical range is 10–50%.");
-        tips.push("Labor Cost can reflect your time, hourly rate, or even freelance value.");
+        tips.push("PLA is often cheapest (~20€/kg), PETG and ABS cost slightly more.");
+        tips.push("Profit Margin covers risks and income. Typical: 10–50%.");
+        tips.push("Labor Cost reflects your time, hourly rate, or freelance value.");
       }
-
       const tipsList = document.getElementById("tipsList");
       tipsList.innerHTML = "";
       tips.forEach((tip) => {
@@ -254,12 +243,13 @@
       const filamentUsed = document.getElementById('filamentUsed').value;
       const electricityCost = document.getElementById('electricityCost').value;
       const printTime = document.getElementById('printTime').value;
+      const avgWatts = document.getElementById('avgWatts').value;
+      const laborMinutes = document.getElementById('laborMinutes').value;
       const laborCost = document.getElementById('laborCost').value;
       const machineWear = document.getElementById('machineWear').value;
       const profitMargin = document.getElementById('profitMargin').value;
 
       const timestamp = new Date().toLocaleString();
-
       let y = 10;
       doc.setFontSize(14);
       doc.text("3D Print Cost Estimate", 10, y); y += 8;
@@ -271,7 +261,9 @@
       doc.text(`Filament Used: ${filamentUsed} g`, 10, y); y += 6;
       doc.text(`Electricity Cost: ${electricityCost} ${currency}/kWh`, 10, y); y += 6;
       doc.text(`Print Time: ${printTime} hrs`, 10, y); y += 6;
-      doc.text(`Labor Cost: ${laborCost} ${currency}/hr`, 10, y); y += 6;
+      doc.text(`Avg Printer Power: ${avgWatts} W`, 10, y); y += 6;
+      doc.text(`Hands-on Labor: ${laborMinutes} min`, 10, y); y += 6;
+      doc.text(`Labor Cost Rate: ${laborCost} ${currency}/hr`, 10, y); y += 6;
       doc.text(`Machine Wear: ${machineWear} ${currency}`, 10, y); y += 6;
       doc.text(`Profit Margin: ${profitMargin}%`, 10, y); y += 6;
 
@@ -305,6 +297,7 @@
   </script>
 </body>
 </html>
+
 
 
 
