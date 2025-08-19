@@ -6,6 +6,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="preload" href="logo.png" as="image" />
   <link rel="stylesheet" href="style.css" />
+
+  <!-- Single-currency mode (no live FX) -->
+  <style>
+    /* Hide USD column + FX status line */
+    .results-card .usd,
+    #fxStatus { display: none !important; }
+
+    /* Hide the FX note in footer (keep your contact line visible) */
+    .app-footer p:first-child { display: none !important; }
+
+    /* Print sheet: hide USD row */
+    @media print {
+      .ps-totals .ps-row:nth-child(2) { display: none !important; }
+    }
+  </style>
 </head>
 <body>
   <div class="accent-line" aria-hidden="true"></div>
@@ -118,34 +133,32 @@
   </main>
 
   <!-- Donate bar -->
-<div class="donate-bar" id="donate-bar" aria-label="Support this project">
-  <a class="btn-donate kofi" href="https://ko-fi.com/theo79" target="_blank" rel="noopener" aria-label="Support on Ko-fi">
-    <!-- Ko-fi cup SVG (no text) -->
-    <svg width="26" height="26" viewBox="0 0 256 256" aria-hidden="true">
-      <path d="M208.2 56H32v72a64 64 0 0 0 64 64h32a64 64 0 0 0 64-64v-8h16a40 40 0 0 0 0-80Zm0 56h-16V72h16a24 24 0 0 1 0 48Z"/>
-      <path d="M128.2 92c-14 0-23 8.5-26.2 14-3.2-5.5-12.2-14-26.2-14-16.9 0-30.6 12-30.6 29.3 0 30.9 44.9 54.1 56.8 59.6a11 11 0 0 0 9.9 0c11.9-5.5 56.8-28.7 56.8-59.6 0-17.3-13.7-29.3-30.6-29.3Z"/>
-    </svg>
-  </a>
+  <div class="donate-bar" id="donate-bar" aria-label="Support this project">
+    <a class="btn-donate kofi" href="https://ko-fi.com/theo79" target="_blank" rel="noopener" aria-label="Support on Ko-fi">
+      <!-- Ko-fi cup SVG (no text) -->
+      <svg width="26" height="26" viewBox="0 0 256 256" aria-hidden="true">
+        <path d="M208.2 56H32v72a64 64 0 0 0 64 64h32a64 64 0 0 0 64-64v-8h16a40 40 0 0 0 0-80Zm0 56h-16V72h16a24 24 0 0 1 0 48Z"/>
+        <path d="M128.2 92c-14 0-23 8.5-26.2 14-3.2-5.5-12.2-14-26.2-14-16.9 0-30.6 12-30.6 29.3 0 30.9 44.9 54.1 56.8 59.6a11 11 0 0 0 9.9 0c11.9-5.5 56.8-28.7 56.8-59.6 0-17.3-13.7-29.3-30.6-29.3Z"/>
+      </svg>
+    </a>
 
-  <a class="btn-donate paypal" href="https://www.paypal.com/paypalme/Tanastopoulos" target="_blank" rel="noopener" aria-label="Donate via PayPal">
-    <!-- PayPal monogram SVG -->
-    <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M7.2 19.5H5.4a.9.9 0 0 1-.89-1.05L6.5 3.9A1.2 1.2 0 0 1 7.7 3h6.1c3.5 0 5.6 1.7 5.6 4.5 0 2.9-2.3 4.7-6 4.7h-2l-.4 2.3h1.7c3.4 0 5.6 1.6 5.6 4.3 0 .3 0 .5-.1.7H12l.3-1.8h-2l-.4 2.1a1 1 0 0 1-1 .7Z"/>
-    </svg>
-  </a>
-</div>
+    <a class="btn-donate paypal" href="https://www.paypal.com/paypalme/Tanastopoulos" target="_blank" rel="noopener" aria-label="Donate via PayPal">
+      <!-- PayPal monogram SVG -->
+      <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7.2 19.5H5.4a.9.9 0 0 1-.89-1.05L6.5 3.9A1.2 1.2 0 0 1 7.7 3h6.1c3.5 0 5.6 1.7 5.6 4.5 0 2.9-2.3 4.7-6 4.7h-2l-.4 2.3h1.7c3.4 0 5.6 1.6 5.6 4.3 0 .3 0 .5-.1.7H12l.3-1.8h-2l-.4 2.1a1 1 0 0 1-1 .7Z"/>
+      </svg>
+    </a>
+  </div>
 
-
-<!-- Footer -->
-<footer class="app-footer">
-  <p>
-    FX is indicative and may differ from your payment processor. Conversion provided by public APIs.
-  </p>
-  <p>
-    Suggestions or bugs? <a href="mailto:projects.theo79@gmail.com">projects.theo79@gmail.com</a>
-  </p>
-</footer>
-
+  <!-- Footer -->
+  <footer class="app-footer">
+    <p>
+      FX is indicative and may differ from your payment processor. Conversion provided by public APIs.
+    </p>
+    <p>
+      Suggestions or bugs? <a href="mailto:projects.theo79@gmail.com">projects.theo79@gmail.com</a>
+    </p>
+  </footer>
 
   <!-- Print-only PDF quote -->
   <section id="printSheet" class="print-sheet" aria-hidden="true">
