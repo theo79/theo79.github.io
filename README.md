@@ -6,6 +6,7 @@ MakerCost is a **modern, browser-based tool** to estimate the **true cost of you
 It’s the successor to my older 3D Print Cost Estimator.
 That version will remain available, but MakerCost is the improved edition with more features and a cleaner UI.
 
+Try it here -- >  https://theo79.github.io/
 
 ---
 
