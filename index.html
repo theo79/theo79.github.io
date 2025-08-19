@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>MakerCost</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preload" href="logo.png" as="image" />
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Single-currency mode (no live FX) -->
+  <style>
+    /* Hide USD column + FX status line */
+    .results-card .usd,
+    #fxStatus { display: none !important; }
+
+    /* Hide the FX note in footer (keep your contact line visible) */
+    .app-footer p:first-child { display: none !important; }
+
+    /* Print sheet: hide USD row */
+    @media print {
+      .ps-totals .ps-row:nth-child(2) { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="accent-line" aria-hidden="true"></div>
+
+  <header class="app-header">
+    <img id="appLogo" src="logo.png" alt="MakerCost logo"
+         onerror="this.onerror=null;this.src='/mnt/data/logo.png';" />
+    <p class="tagline">Price any print in minutes.</p>
+  </header>
+
+  <main class="container">
+    <!-- Row 1: Printer + G-code -->
+    <section class="row">
+      <div class="card">
+        <label for="printerType" class="label">Printer type</label>
+        <select id="printerType" class="input">
+          <option value="" selected disabled hidden>Select a printer…</option>
+          <option value="other">Other (enter power manually)</option>
+        </select>
+        <small class="hint">Selecting a printer will auto-fill the average power.</small>
+        <div class="inline-group">
+          <label for="avgPower" class="label-sm">Average power (W)</label>
+          <input id="avgPower" class="input" type="number" step="1" min="0" placeholder="—" readonly />
+        </div>
+      </div>
+
+      <div class="card">
+        <label for="gcodeFile" class="label">Upload G-code</label>
+        <input id="gcodeFile" class="input" type="file" accept=".gcode,.gco,.g" />
+        <small class="hint">Only G-code files are supported. Auto-fills filament used, and Print time.</small>
+        <div class="inline-group">
+          <label for="filamentUsedGrams" class="label-sm">Filament used (g)</label>
+          <input id="filamentUsedGrams" class="input" type="number" step="0.01" min="0" placeholder="—" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Row 2: Filament cost + print time -->
+    <section class="row">
+      <div class="card">
+        <label class="label">Filament Cost (per kg) [€ / $]</label>
+        <input id="filamentCostPerKg" class="input" type="number" step="0.01" min="0" placeholder="e.g., 22.50" />
+      </div>
+      <div class="card">
+        <label for="printTimeHours" class="label">Print time (hours)</label>
+        <input id="printTimeHours" class="input" type="number" step="0.01" min="0" placeholder="e.g., 3.75" />
+      </div>
+    </section>
+
+    <!-- Row 3: Electricity + wear -->
+    <section class="row">
+      <div class="card">
+        <label class="label">Electricity Cost (per kWh) [€ / $]</label>
+        <input id="electricityCost" class="input" type="number" step="0.001" min="0" placeholder="e.g., 0.18" />
+      </div>
+      <div class="card">
+        <label class="label">Machine Wear Cost [€ / $]</label>
+        <input id="machineWearCost" class="input" type="number" step="0.01" min="0" placeholder="e.g., 2.00" />
+        <small class="hint">Typical range: 1–5 depending on wear and maintenance.</small>
+      </div>
+    </section>
+
+    <!-- Row 4: Hands-on labor + hourly rate -->
+    <section class="row">
+      <div class="card">
+        <label class="label" for="handsOnLaborMins">Hands-on labor (minutes)</label>
+        <input id="handsOnLaborMins" class="input" type="number" step="1" min="0" placeholder="e.g., 20" />
+        <small class="hint">Time you actually worked: setup, filament changes, cleanup.</small>
+      </div>
+      <div class="card">
+        <label class="label" for="laborCostPerHour">Labor cost (per hour) [€ / $]</label>
+        <input id="laborCostPerHour" class="input" type="number" step="0.01" min="0" placeholder="e.g., 10.00" />
+        <small class="hint">Estimate your hourly rate (e.g., 8–15 per hour).</small>
+      </div>
+    </section>
+
+    <!-- Row 5: Profit margin + Calculate/Export buttons -->
+    <section class="row">
+      <div class="card">
+        <label class="label" for="profitMargin">Profit Margin (%)</label>
+        <input id="profitMargin" class="input" type="number" step="1" min="0" value="20" />
+        <small class="hint">Default is 20%. Adjust as needed.</small>
+      </div>
+      <div class="card centered buttons-card">
+        <div class="buttons-wrap">
+          <button id="btnCalculate" class="btn-accent" type="button">Calculate</button>
+          <button id="btnExportPdf" class="btn-outline" type="button">Export to PDF</button>
+        </div>
+        <small class="hint">Calculates total price with margin. Exports a print-ready PDF.</small>
+      </div>
+    </section>
+
+    <!-- Results -->
+    <section class="row">
+      <div class="card results-card" style="grid-column: 1 / -1;">
+        <label class="label">Total price</label>
+        <div class="totals">
+          <div class="eur">
+            <span class="totals-label">EUR (€)</span>
+            <div id="outTotalEUR" class="totals-value">—</div>
+          </div>
+          <div class="usd">
+            <span class="totals-label">USD ($)</span>
+            <div id="outTotalUSD" class="totals-value secondary">—</div>
+            <small id="fxStatus" class="hint"></small>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Donate bar -->
+  <div class="donate-bar" id="donate-bar" aria-label="Support this project">
+    <a class="btn-donate kofi" href="https://ko-fi.com/theo79" target="_blank" rel="noopener" aria-label="Support on Ko-fi">
+      <!-- Ko-fi cup SVG (no text) -->
+      <svg width="26" height="26" viewBox="0 0 256 256" aria-hidden="true">
+        <path d="M208.2 56H32v72a64 64 0 0 0 64 64h32a64 64 0 0 0 64-64v-8h16a40 40 0 0 0 0-80Zm0 56h-16V72h16a24 24 0 0 1 0 48Z"/>
+        <path d="M128.2 92c-14 0-23 8.5-26.2 14-3.2-5.5-12.2-14-26.2-14-16.9 0-30.6 12-30.6 29.3 0 30.9 44.9 54.1 56.8 59.6a11 11 0 0 0 9.9 0c11.9-5.5 56.8-28.7 56.8-59.6 0-17.3-13.7-29.3-30.6-29.3Z"/>
+      </svg>
+    </a>
+
+    <a class="btn-donate paypal" href="https://www.paypal.com/paypalme/Tanastopoulos" target="_blank" rel="noopener" aria-label="Donate via PayPal">
+      <!-- PayPal monogram SVG -->
+      <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7.2 19.5H5.4a.9.9 0 0 1-.89-1.05L6.5 3.9A1.2 1.2 0 0 1 7.7 3h6.1c3.5 0 5.6 1.7 5.6 4.5 0 2.9-2.3 4.7-6 4.7h-2l-.4 2.3h1.7c3.4 0 5.6 1.6 5.6 4.3 0 .3 0 .5-.1.7H12l.3-1.8h-2l-.4 2.1a1 1 0 0 1-1 .7Z"/>
+      </svg>
+    </a>
+  </div>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <p>
+      FX is indicative and may differ from your payment processor. Conversion provided by public APIs.
+    </p>
+    <p>
+      Suggestions or bugs? <a href="mailto:projects.theo79@gmail.com">projects.theo79@gmail.com</a>
+    </p>
+  </footer>
+
+  <!-- Print-only PDF quote -->
+  <section id="printSheet" class="print-sheet" aria-hidden="true">
+    <div class="ps-head">
+      <img src="logo.png" alt="MakerCost" onerror="this.onerror=null;this.src='/mnt/data/logo.png';" />
+      <div>
+        <h2>MakerCost — Quote</h2>
+        <p id="psTimestamp" class="ps-meta">—</p>
+      </div>
+    </div>
+
+    <div class="ps-line"></div>
+
+    <div class="ps-totals">
+      <div class="ps-row"><span>EUR (€)</span><strong id="psTotalEUR">—</strong></div>
+      <div class="ps-row"><span>USD ($)</span><strong id="psTotalUSD">—</strong></div>
+    </div>
+
+    <div class="ps-info">
+      <div><span>Printer type:</span> <strong id="psPrinter">—</strong></div>
+      <div><span>Filament used:</span> <strong id="psFilament">—</strong></div>
+      <div><span>Print time:</span> <strong id="psTime">—</strong></div>
+    </div>
+
+    <p class="ps-note">FX is indicative and may differ from your payment processor.</p>
+  </section>
+
+  <!-- Scripts -->
+  <script src="gcode.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>
