@@ -1,307 +1,181 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>3D Print Cost Estimator</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      font-size: 14px;
-    }
-    .wrapper {
-      display: flex;
-      max-width: 800px;
-      margin: auto;
-      gap: 20px;
-    }
-    .left, .right {
-      display: flex;
-      flex-direction: column;
-    }
-    .left {
-      flex: 4;
-    }
-    .right {
-      flex: 3;
-      justify-content: flex-start;
-    }
-    label {
-      margin-top: 10px;
-      font-weight: bold;
-    }
-    input, select {
-      padding: 6px;
-      margin: 5px 0;
-      width: 100%;
-      font-size: 13px;
-    }
-    button {
-      margin-top: 15px;
-      padding: 10px;
-      background: blue;
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    h3 {
-      margin-top: 20px;
-      font-size: 16px;
-    }
-    .suggestions {
-      text-align: center;
-      margin-top: 30px;
-      font-size: 12px;
-      color: #666;
-    }
-    .tooltip-icon {
-      cursor: help;
-      color: #007BFF;
-      margin-left: 4px;
-    }
-    .tips-section {
-      max-width: 800px;
-      margin: 30px auto 10px auto;
-      font-size: 13px;
-      color: #444;
-      display: none;
-    }
-    .tips-section h4 {
-      margin-bottom: 10px;
-      font-size: 15px;
-      color: #222;
-    }
-    .tips-section ul {
-      padding-left: 18px;
-    }
-    .tips-section li {
-      margin-bottom: 8px;
-      line-height: 1.4;
-    }
-    #downloadBtn {
-      display: none;
-      margin: 20px auto 0;
-      max-width: 800px;
-      background-color: green;
-    }
-  </style>
+  <meta charset="utf-8" />
+  <title>MakerCost</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preload" href="logo.png" as="image" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h2 style="text-align:center;">3D Print Cost Estimator</h2>
+  <div class="accent-line" aria-hidden="true"></div>
 
-  <div style="max-width:800px; margin:auto;">
-    <label>Project Name (optional):</label>
-    <input type="text" id="projectName" placeholder="e.g., Phone Stand Prototype" />
-  </div>
+  <header class="app-header">
+    <img id="appLogo" src="logo.png" alt="MakerCost logo"
+         onerror="this.onerror=null;this.src='/mnt/data/logo.png';" />
+    <p class="tagline">Price any print in minutes.</p>
+  </header>
 
-  <div class="wrapper">
-    <div class="left">
-      <label>Filament Cost (per kg) <span class="currency-label">[€]</span>:</label>
-      <input type="number" id="filamentCost" placeholder="">
+  <main class="container">
+    <!-- Row 1: Printer + G-code -->
+    <section class="row">
+      <div class="card">
+        <label for="printerType" class="label">Printer type</label>
+        <select id="printerType" class="input">
+          <option value="" selected disabled hidden>Select a printer…</option>
+          <option value="other">Other (enter power manually)</option>
+        </select>
+        <small class="hint">Selecting a printer will auto-fill the average power.</small>
+        <div class="inline-group">
+          <label for="avgPower" class="label-sm">Average power (W)</label>
+          <input id="avgPower" class="input" type="number" step="1" min="0" placeholder="—" readonly />
+        </div>
+      </div>
 
-      <label>Filament Used (grams):</label>
-      <input type="number" id="filamentUsed" placeholder="">
+      <div class="card">
+        <label for="gcodeFile" class="label">Upload G-code</label>
+        <input id="gcodeFile" class="input" type="file" accept=".gcode,.gco,.g" />
+        <small class="hint">Only G-code files are supported. Auto-fills filament used, and Print time.</small>
+        <div class="inline-group">
+          <label for="filamentUsedGrams" class="label-sm">Filament used (g)</label>
+          <input id="filamentUsedGrams" class="input" type="number" step="0.01" min="0" placeholder="—" />
+        </div>
+      </div>
+    </section>
 
-      <label>Electricity Cost (per kWh) <span class="currency-label">[€]</span>:</label>
-      <input type="number" id="electricityCost" placeholder="">
+    <!-- Row 2: Filament cost + print time -->
+    <section class="row">
+      <div class="card">
+        <label class="label">Filament Cost (per kg) [€ / $]</label>
+        <input id="filamentCostPerKg" class="input" type="number" step="0.01" min="0" placeholder="e.g., 22.50" />
+      </div>
+      <div class="card">
+        <label for="printTimeHours" class="label">Print time (hours)</label>
+        <input id="printTimeHours" class="input" type="number" step="0.01" min="0" placeholder="e.g., 3.75" />
+      </div>
+    </section>
 
-      <label>Print Time (hours):</label>
-      <input type="number" id="printTime" placeholder="">
+    <!-- Row 3: Electricity + wear -->
+    <section class="row">
+      <div class="card">
+        <label class="label">Electricity Cost (per kWh) [€ / $]</label>
+        <input id="electricityCost" class="input" type="number" step="0.001" min="0" placeholder="e.g., 0.18" />
+      </div>
+      <div class="card">
+        <label class="label">Machine Wear Cost [€ / $]</label>
+        <input id="machineWearCost" class="input" type="number" step="0.01" min="0" placeholder="e.g., 2.00" />
+        <small class="hint">Typical range: 1–5 depending on wear and maintenance.</small>
+      </div>
+    </section>
 
-      <label>
-        Average Printer Power (W):
-        <span class="tooltip-icon" title="Average wattage while printing. If unsure, 90–150 W is common for small FDM printers.">&#9432;</span>
-      </label>
-      <input type="number" id="avgWatts" placeholder="e.g., 120">
+    <!-- Row 4: Hands-on labor + hourly rate -->
+    <section class="row">
+      <div class="card">
+        <label class="label" for="handsOnLaborMins">Hands-on labor (minutes)</label>
+        <input id="handsOnLaborMins" class="input" type="number" step="1" min="0" placeholder="e.g., 20" />
+        <small class="hint">Time you actually worked: setup, filament changes, cleanup.</small>
+      </div>
+      <div class="card">
+        <label class="label" for="laborCostPerHour">Labor cost (per hour) [€ / $]</label>
+        <input id="laborCostPerHour" class="input" type="number" step="0.01" min="0" placeholder="e.g., 10.00" />
+        <small class="hint">Estimate your hourly rate (e.g., 8–15 per hour).</small>
+      </div>
+    </section>
 
-      <label>
-        Hands-on Labor (minutes):
-        <span class="tooltip-icon" title="Only the time you actually work: setup, filament change, cleanup.">&#9432;</span>
-      </label>
-      <input type="number" id="laborMinutes" placeholder="e.g., 20">
+    <!-- Row 5: Profit margin + Calculate/Export buttons -->
+    <section class="row">
+      <div class="card">
+        <label class="label" for="profitMargin">Profit Margin (%)</label>
+        <input id="profitMargin" class="input" type="number" step="1" min="0" value="20" />
+        <small class="hint">Default is 20%. Adjust as needed.</small>
+      </div>
+      <div class="card centered buttons-card">
+        <div class="buttons-wrap">
+          <button id="btnCalculate" class="btn-accent" type="button">Calculate</button>
+          <button id="btnExportPdf" class="btn-outline" type="button">Export to PDF</button>
+        </div>
+        <small class="hint">Calculates total price with margin. Exports a print-ready PDF.</small>
+      </div>
+    </section>
 
-      <label>
-        Labor Cost (per hour) <span class="currency-label">[€]</span>:
-        <span class="tooltip-icon" title="Estimate your hourly rate or opportunity cost. E.g., 8–15€/hr.">&#9432;</span>
-      </label>
-      <input type="number" id="laborCost" placeholder="">
+    <!-- Results -->
+    <section class="row">
+      <div class="card results-card" style="grid-column: 1 / -1;">
+        <label class="label">Total price</label>
+        <div class="totals">
+          <div class="eur">
+            <span class="totals-label">EUR (€)</span>
+            <div id="outTotalEUR" class="totals-value">—</div>
+          </div>
+          <div class="usd">
+            <span class="totals-label">USD ($)</span>
+            <div id="outTotalUSD" class="totals-value secondary">—</div>
+            <small id="fxStatus" class="hint"></small>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
 
-      <label>
-        Machine Wear Cost (fixed) <span class="currency-label">[€]</span>:
-        <span class="tooltip-icon" title="Typical range: 1–3€ depending on wear and maintenance.">&#9432;</span>
-      </label>
-      <input type="number" id="machineWear" placeholder="">
+  <!-- Donate bar -->
+<div class="donate-bar" id="donate-bar" aria-label="Support this project">
+  <a class="btn-donate kofi" href="https://ko-fi.com/theo79" target="_blank" rel="noopener" aria-label="Support on Ko-fi">
+    <!-- Ko-fi cup SVG (no text) -->
+    <svg width="26" height="26" viewBox="0 0 256 256" aria-hidden="true">
+      <path d="M208.2 56H32v72a64 64 0 0 0 64 64h32a64 64 0 0 0 64-64v-8h16a40 40 0 0 0 0-80Zm0 56h-16V72h16a24 24 0 0 1 0 48Z"/>
+      <path d="M128.2 92c-14 0-23 8.5-26.2 14-3.2-5.5-12.2-14-26.2-14-16.9 0-30.6 12-30.6 29.3 0 30.9 44.9 54.1 56.8 59.6a11 11 0 0 0 9.9 0c11.9-5.5 56.8-28.7 56.8-59.6 0-17.3-13.7-29.3-30.6-29.3Z"/>
+    </svg>
+  </a>
+
+  <a class="btn-donate paypal" href="https://www.paypal.com/paypalme/Tanastopoulos" target="_blank" rel="noopener" aria-label="Donate via PayPal">
+    <!-- PayPal monogram SVG -->
+    <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7.2 19.5H5.4a.9.9 0 0 1-.89-1.05L6.5 3.9A1.2 1.2 0 0 1 7.7 3h6.1c3.5 0 5.6 1.7 5.6 4.5 0 2.9-2.3 4.7-6 4.7h-2l-.4 2.3h1.7c3.4 0 5.6 1.6 5.6 4.3 0 .3 0 .5-.1.7H12l.3-1.8h-2l-.4 2.1a1 1 0 0 1-1 .7Z"/>
+    </svg>
+  </a>
+</div>
+
+
+<!-- Footer -->
+<footer class="app-footer">
+  <p>
+    FX is indicative and may differ from your payment processor. Conversion provided by public APIs.
+  </p>
+  <p>
+    Suggestions or bugs? <a href="mailto:projects.theo79@gmail.com">projects.theo79@gmail.com</a>
+  </p>
+</footer>
+
+
+  <!-- Print-only PDF quote -->
+  <section id="printSheet" class="print-sheet" aria-hidden="true">
+    <div class="ps-head">
+      <img src="logo.png" alt="MakerCost" onerror="this.onerror=null;this.src='/mnt/data/logo.png';" />
+      <div>
+        <h2>MakerCost — Quote</h2>
+        <p id="psTimestamp" class="ps-meta">—</p>
+      </div>
     </div>
 
-    <div class="right">
-      <label>Currency:</label>
-      <select id="currencySelect" onchange="updateCurrency()">
-        <option value="€" selected>Euro (€)</option>
-        <option value="$">US Dollar ($)</option>
-      </select>
+    <div class="ps-line"></div>
 
-      <label>Profit Margin (%):</label>
-      <input type="number" id="profitMargin" value="20">
-
-      <button onclick="calculateCost()">Calculate</button>
-      <h3>Total Cost: <span id="currencySymbol">€</span><span id="totalCost">0.00</span></h3>
+    <div class="ps-totals">
+      <div class="ps-row"><span>EUR (€)</span><strong id="psTotalEUR">—</strong></div>
+      <div class="ps-row"><span>USD ($)</span><strong id="psTotalUSD">—</strong></div>
     </div>
-  </div>
 
-  <div class="tips-section">
-    <h4>Helpful Tips</h4>
-    <ul id="tipsList"></ul>
-  </div>
+    <div class="ps-info">
+      <div><span>Printer type:</span> <strong id="psPrinter">—</strong></div>
+      <div><span>Filament used:</span> <strong id="psFilament">—</strong></div>
+      <div><span>Print time:</span> <strong id="psTime">—</strong></div>
+    </div>
 
-  <div style="text-align:center;">
-    <button id="downloadBtn" onclick="downloadPDF()">Download as PDF</button>
-  </div>
+    <p class="ps-note">FX is indicative and may differ from your payment processor.</p>
+  </section>
 
-  <div class="suggestions">
-    Suggestions: <a href="mailto:projects.theo79@gmail.com">projects.theo79@gmail.com</a>
-  </div>
+  <!-- Scripts -->
+  <script src="gcode.js"></script>
+  <script src="app.js"></script>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script>
-    function updateCurrency() {
-      const currency = document.getElementById('currencySelect').value;
-      document.getElementById('currencySymbol').innerText = currency;
-      const labels = document.querySelectorAll('.currency-label');
-      labels.forEach(label => label.innerText = `[${currency}]`);
-      calculateCost();
-    }
-
-    function calculateCost() {
-      const currency = document.getElementById('currencySelect').value;
-
-      const filamentCost = parseFloat(document.getElementById('filamentCost').value) || 0;
-      const filamentUsed = parseFloat(document.getElementById('filamentUsed').value) || 0;
-      const electricityCost = parseFloat(document.getElementById('electricityCost').value) || 0;
-      const printTime = parseFloat(document.getElementById('printTime').value) || 0;
-      const avgWatts = parseFloat(document.getElementById('avgWatts').value) || 0;
-      const laborRate = parseFloat(document.getElementById('laborCost').value) || 0;
-      const laborMinutes = parseFloat(document.getElementById('laborMinutes').value) || 0;
-      const machineWear = parseFloat(document.getElementById('machineWear').value) || 0;
-      const profitMargin = parseFloat(document.getElementById('profitMargin').value) || 0;
-
-      const filamentExpense = (filamentCost / 1000) * filamentUsed;
-      const electricityExpense = (avgWatts > 0) ? (avgWatts / 1000) * printTime * electricityCost : 0;
-      const laborHours = laborMinutes / 60;
-      const laborExpense = laborRate * laborHours;
-
-      let subtotal = filamentExpense + electricityExpense + laborExpense + machineWear;
-      let total = subtotal + (subtotal * (profitMargin / 100));
-
-      document.getElementById('totalCost').innerText = total.toFixed(2);
-      document.getElementById('currencySymbol').innerText = currency;
-
-      updateTips(filamentCost, profitMargin, laborRate);
-      document.querySelector('.tips-section').style.display = 'block';
-      document.getElementById('downloadBtn').style.display = 'inline-block';
-    }
-
-    function updateTips(filamentCost, profitMargin, laborCost) {
-      const tips = [];
-      if (filamentCost > 25) {
-        tips.push("You're using premium material — consider showing this to clients.");
-      } else if (filamentCost < 15) {
-        tips.push("That’s a low filament price — check if it’s per kg.");
-      }
-      if (profitMargin > 80) {
-        tips.push("High profit margins may deter buyers. 20–50% is more common.");
-      } else if (profitMargin < 5) {
-        tips.push("Low margins can eat into your costs. Cover all expenses.");
-      }
-      if (laborCost > 20) {
-        tips.push("High labor rate? Break it down into design/setup/maintenance time.");
-      }
-      if (tips.length === 0) {
-        tips.push("PLA is often cheapest (~20€/kg), PETG and ABS cost slightly more.");
-        tips.push("Profit Margin covers risks and income. Typical: 10–50%.");
-        tips.push("Labor Cost reflects your time, hourly rate, or freelance value.");
-      }
-      const tipsList = document.getElementById("tipsList");
-      tipsList.innerHTML = "";
-      tips.forEach((tip) => {
-        const li = document.createElement("li");
-        li.textContent = tip;
-        tipsList.appendChild(li);
-      });
-    }
-
-    async function downloadPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-
-      const currency = document.getElementById('currencySelect').value;
-      const totalCost = document.getElementById('totalCost').innerText;
-      const projectName = document.getElementById('projectName').value || "Untitled Project";
-
-      const filamentCost = document.getElementById('filamentCost').value;
-      const filamentUsed = document.getElementById('filamentUsed').value;
-      const electricityCost = document.getElementById('electricityCost').value;
-      const printTime = document.getElementById('printTime').value;
-      const avgWatts = document.getElementById('avgWatts').value;
-      const laborMinutes = document.getElementById('laborMinutes').value;
-      const laborCost = document.getElementById('laborCost').value;
-      const machineWear = document.getElementById('machineWear').value;
-      const profitMargin = document.getElementById('profitMargin').value;
-
-      const timestamp = new Date().toLocaleString();
-      let y = 10;
-      doc.setFontSize(14);
-      doc.text("3D Print Cost Estimate", 10, y); y += 8;
-      doc.setFontSize(11);
-      doc.text(`Project: ${projectName}`, 10, y); y += 6;
-      doc.text(`Generated on: ${timestamp}`, 10, y); y += 8;
-
-      doc.text(`Filament Cost: ${filamentCost} ${currency}/kg`, 10, y); y += 6;
-      doc.text(`Filament Used: ${filamentUsed} g`, 10, y); y += 6;
-      doc.text(`Electricity Cost: ${electricityCost} ${currency}/kWh`, 10, y); y += 6;
-      doc.text(`Print Time: ${printTime} hrs`, 10, y); y += 6;
-      doc.text(`Avg Printer Power: ${avgWatts} W`, 10, y); y += 6;
-      doc.text(`Hands-on Labor: ${laborMinutes} min`, 10, y); y += 6;
-      doc.text(`Labor Cost Rate: ${laborCost} ${currency}/hr`, 10, y); y += 6;
-      doc.text(`Machine Wear: ${machineWear} ${currency}`, 10, y); y += 6;
-      doc.text(`Profit Margin: ${profitMargin}%`, 10, y); y += 6;
-
-      y += 4;
-      doc.setFontSize(12);
-      doc.text(`Total Cost: ${currency}${totalCost}`, 10, y); y += 10;
-
-      const tips = document.querySelectorAll('#tipsList li');
-      doc.setFontSize(11);
-      doc.text("Helpful Tips:", 10, y); y += 6;
-      tips.forEach((tip) => {
-        const lines = doc.splitTextToSize("- " + tip.textContent, 180);
-        doc.text(lines, 10, y);
-        y += lines.length * 6;
-      });
-
-      doc.save(`${projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_cost.pdf`);
-    }
-
-    window.onload = calculateCost;
-  </script>
-
-  <script src='https://storage.ko-fi.com/cdn/scripts/overlay-widget.js'></script>
-  <script>
-    kofiWidgetOverlay.draw('theo79', {
-      'type': 'floating-chat',
-      'floating-chat.donateButton.text': 'Tip Me',
-      'floating-chat.donateButton.background-color': '#00b9fe',
-      'floating-chat.donateButton.text-color': '#fff'
-    });
-  </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
